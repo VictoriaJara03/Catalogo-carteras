@@ -85,6 +85,8 @@
 
   <div class="tabs">
     <button class="active" data-tab="productos">Productos</button>
+    <button data-tab="categorias">Categorías</button>
+    <button data-tab="textos">Textos</button>
     <button data-tab="config">Datos de contacto</button>
     <button data-tab="apariencia">Apariencia</button>
   </div>
@@ -131,6 +133,60 @@
         <thead><tr><th></th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Visible</th><th></th></tr></thead>
         <tbody id="productsTableBody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- ===== TAB CATEGORIAS ===== -->
+  <div id="tab-categorias" class="hidden">
+    <div class="card">
+      <h1 style="font-size:18px;">Categorías actuales</h1>
+      <table>
+        <thead><tr><th>Nombre</th><th>Orden</th><th></th></tr></thead>
+        <tbody id="categoriesTableBody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h1 style="font-size:18px;">Agregar categoría</h1>
+      <label for="newCatLabel">Nombre de la categoría</label>
+      <input id="newCatLabel" type="text" placeholder="Ej: Lentes">
+      <div class="row" style="margin-top:14px;">
+        <button class="btn-primary" id="addCategoryBtn">Agregar categoría</button>
+      </div>
+      <div class="msg" id="categoryMsg"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB TEXTOS ===== -->
+  <div id="tab-textos" class="hidden">
+    <div class="card">
+      <h1 style="font-size:18px;">Textos de la página</h1>
+      <label for="tEyebrow">Frase pequeña arriba del título</label>
+      <input id="tEyebrow" type="text">
+      <label for="tTitle">Título principal</label>
+      <input id="tTitle" type="text">
+      <label for="tDescription">Descripción debajo del título</label>
+      <input id="tDescription" type="text">
+      <label for="tFooterDescription">Descripción en el pie de página</label>
+      <input id="tFooterDescription" type="text">
+    </div>
+    <div class="card">
+      <h1 style="font-size:18px;">Tamaño de los textos</h1>
+      <label for="tTitleSize">Tamaño del título principal</label>
+      <select id="tTitleSize">
+        <option value="sm">Chico</option>
+        <option value="md">Mediano</option>
+        <option value="lg">Grande</option>
+      </select>
+      <label for="tTextSize">Tamaño del texto de descripción</label>
+      <select id="tTextSize">
+        <option value="sm">Chico</option>
+        <option value="md">Mediano</option>
+        <option value="lg">Grande</option>
+      </select>
+      <div class="row" style="margin-top:18px;">
+        <button class="btn-primary" id="saveTextsBtn">Guardar textos</button>
+      </div>
+      <div class="msg" id="textsMsg"></div>
     </div>
   </div>
 
@@ -315,20 +371,94 @@
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      document.getElementById("tab-productos").classList.toggle("hidden", btn.dataset.tab !== "productos");
-      document.getElementById("tab-config").classList.toggle("hidden", btn.dataset.tab !== "config");
-      document.getElementById("tab-apariencia").classList.toggle("hidden", btn.dataset.tab !== "apariencia");
+      ["productos","categorias","textos","config","apariencia"].forEach(t => {
+        document.getElementById("tab-" + t).classList.toggle("hidden", btn.dataset.tab !== t);
+      });
     });
   });
 
   /* ---------- INIT ---------- */
   async function initApp(){
-    const { data: categorias } = await sb.from("categorias").select("*").order("orden");
-    CATEGORIES = categorias || [];
-    document.getElementById("pCategory").innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.label}</option>`).join("");
+    await loadCategoriesTab();
     await loadConfig();
     await loadProducts();
   }
+
+  /* ---------- CATEGORIAS ---------- */
+  async function loadCategoriesTab(){
+    const { data } = await sb.from("categorias").select("*").order("orden");
+    CATEGORIES = data || [];
+    document.getElementById("pCategory").innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.label}</option>`).join("");
+
+    const tbody = document.getElementById("categoriesTableBody");
+    if(!CATEGORIES.length){
+      tbody.innerHTML = `<tr><td colspan="3">No hay categorías cargadas.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = CATEGORIES.map((c, i) => `
+      <tr>
+        <td>${c.label}</td>
+        <td>${c.orden}</td>
+        <td class="row">
+          <button class="btn-outline btn-small" onclick="moveCategory('${c.id}',-1)" ${i===0 ? "disabled" : ""}>↑</button>
+          <button class="btn-outline btn-small" onclick="moveCategory('${c.id}',1)" ${i===CATEGORIES.length-1 ? "disabled" : ""}>↓</button>
+          <button class="btn-danger" onclick="deleteCategory('${c.id}')">Borrar</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  window.moveCategory = async function(id, dir){
+    const idx = CATEGORIES.findIndex(c => c.id === id);
+    const swapIdx = idx + dir;
+    if(swapIdx < 0 || swapIdx >= CATEGORIES.length) return;
+    const a = CATEGORIES[idx], b = CATEGORIES[swapIdx];
+    await sb.from("categorias").update({ orden: b.orden }).eq("id", a.id);
+    await sb.from("categorias").update({ orden: a.orden }).eq("id", b.id);
+    loadCategoriesTab();
+  };
+
+  window.deleteCategory = async function(id){
+    if(!confirm("¿Borrar esta categoría?")) return;
+    const { error } = await sb.from("categorias").delete().eq("id", id);
+    if(error){
+      const msg = error.message.includes("foreign key")
+        ? "No se puede borrar: todavía tiene productos cargados en esta categoría."
+        : error.message;
+      alert(msg);
+      return;
+    }
+    loadCategoriesTab();
+  };
+
+  document.getElementById("addCategoryBtn").addEventListener("click", async () => {
+    const label = document.getElementById("newCatLabel").value.trim();
+    if(!label){ showMsg("categoryMsg", "Escribí un nombre.", false); return; }
+    const id = label.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const maxOrden = CATEGORIES.length ? Math.max(...CATEGORIES.map(c => c.orden)) : 0;
+    const { error } = await sb.from("categorias").insert({ id, label, orden: maxOrden + 1 });
+    if(error){ showMsg("categoryMsg", "Error: " + error.message, false); return; }
+    document.getElementById("newCatLabel").value = "";
+    showMsg("categoryMsg", "Categoría agregada.", true);
+    loadCategoriesTab();
+  });
+
+  /* ---------- TEXTOS ---------- */
+  document.getElementById("saveTextsBtn").addEventListener("click", async () => {
+    const payload = {
+      hero_eyebrow: document.getElementById("tEyebrow").value.trim(),
+      hero_title: document.getElementById("tTitle").value.trim(),
+      hero_description: document.getElementById("tDescription").value.trim(),
+      footer_description: document.getElementById("tFooterDescription").value.trim(),
+      title_size: document.getElementById("tTitleSize").value,
+      text_size: document.getElementById("tTextSize").value,
+    };
+    const { error } = await sb.from("config").update(payload).eq("id", 1);
+    if(error){ showMsg("textsMsg", "Error al guardar: " + error.message, false); return; }
+    showMsg("textsMsg", "Textos guardados correctamente.", true);
+  });
 
   /* ---------- CONFIG ---------- */
   async function loadConfig(){
@@ -354,6 +484,13 @@
       document.getElementById("coverPreview").src = data.cover_image_url;
       document.getElementById("coverPreviewWrap").classList.remove("hidden");
     }
+
+    document.getElementById("tEyebrow").value = data.hero_eyebrow || "Catálogo mayorista y minorista";
+    document.getElementById("tTitle").value = data.hero_title || "Carteras y accesorios que se lucen solos";
+    document.getElementById("tDescription").value = data.hero_description || "Mirá el catálogo, elegí lo que te gusta y coordinamos todo directo por WhatsApp o Instagram — sin pagos ni registros.";
+    document.getElementById("tFooterDescription").value = data.footer_description || "Accesorios de moda para todos los días. Catálogo actualizado — consultanos disponibilidad antes de decidir tu compra.";
+    document.getElementById("tTitleSize").value = data.title_size || "md";
+    document.getElementById("tTextSize").value = data.text_size || "md";
   }
 
   document.getElementById("saveConfigBtn").addEventListener("click", async () => {
