@@ -79,6 +79,7 @@
   <div class="tabs">
     <button class="active" data-tab="productos">Productos</button>
     <button data-tab="config">Datos de contacto</button>
+    <button data-tab="apariencia">Apariencia</button>
   </div>
 
   <!-- ===== TAB PRODUCTOS ===== -->
@@ -143,6 +144,49 @@
       <div class="msg" id="configMsg"></div>
     </div>
   </div>
+
+  <!-- ===== TAB APARIENCIA ===== -->
+  <div id="tab-apariencia" class="hidden">
+    <div class="card">
+      <h1 style="font-size:18px;">Logo</h1>
+      <p class="sub">Se muestra arriba a la izquierda, reemplazando el nombre en texto. Recomendado: fondo transparente (PNG), no muy alto.</p>
+      <div id="logoPreviewWrap" class="hidden" style="margin-bottom:10px;"><img id="logoPreview" style="height:48px;width:auto;border-radius:4px;"></div>
+      <input id="aLogo" type="file" accept="image/*">
+    </div>
+
+    <div class="card">
+      <h1 style="font-size:18px;">Imagen de portada</h1>
+      <p class="sub">Se muestra en la parte de arriba de la página, al lado del título. Recomendado: formato horizontal.</p>
+      <div id="coverPreviewWrap" class="hidden" style="margin-bottom:10px;"><img id="coverPreview" style="height:120px;width:auto;border-radius:4px;object-fit:cover;"></div>
+      <input id="aCover" type="file" accept="image/*">
+    </div>
+
+    <div class="card">
+      <h1 style="font-size:18px;">Colores</h1>
+      <label for="aColorPrimary">Color principal (precios, botones, detalles)</label>
+      <input id="aColorPrimary" type="color">
+      <label for="aColorDark">Color oscuro (textos, encabezado, pie de página)</label>
+      <input id="aColorDark" type="color">
+      <label for="aColorBg">Color de fondo</label>
+      <input id="aColorBg" type="color">
+    </div>
+
+    <div class="card">
+      <h1 style="font-size:18px;">Formato del catálogo</h1>
+      <label for="aLayout">Cómo se muestran los productos</label>
+      <select id="aLayout">
+        <option value="grid">Cuadrícula (fotos grandes, varias columnas)</option>
+        <option value="list">Lista (una fila por producto)</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <button class="btn-primary" id="saveAppearanceBtn">Guardar apariencia</button>
+      </div>
+      <div class="msg" id="appearanceMsg"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -194,6 +238,7 @@
       btn.classList.add("active");
       document.getElementById("tab-productos").classList.toggle("hidden", btn.dataset.tab !== "productos");
       document.getElementById("tab-config").classList.toggle("hidden", btn.dataset.tab !== "config");
+      document.getElementById("tab-apariencia").classList.toggle("hidden", btn.dataset.tab !== "apariencia");
     });
   });
 
@@ -216,6 +261,20 @@
     document.getElementById("cMsg").value = data.default_wa_message || "";
     document.getElementById("cAddress").value = data.address || "";
     document.getElementById("cHours").value = data.hours || "";
+
+    document.getElementById("aColorPrimary").value = data.color_primary || "#a97e45";
+    document.getElementById("aColorDark").value = data.color_dark || "#241a16";
+    document.getElementById("aColorBg").value = data.color_background || "#ede3d0";
+    document.getElementById("aLayout").value = data.catalog_layout || "grid";
+
+    if(data.logo_url){
+      document.getElementById("logoPreview").src = data.logo_url;
+      document.getElementById("logoPreviewWrap").classList.remove("hidden");
+    }
+    if(data.cover_image_url){
+      document.getElementById("coverPreview").src = data.cover_image_url;
+      document.getElementById("coverPreviewWrap").classList.remove("hidden");
+    }
   }
 
   document.getElementById("saveConfigBtn").addEventListener("click", async () => {
@@ -230,6 +289,47 @@
     const { error } = await sb.from("config").update(payload).eq("id", 1);
     if(error){ showMsg("configMsg", "Error al guardar: " + error.message, false); return; }
     showMsg("configMsg", "Datos guardados correctamente.", true);
+  });
+
+  /* ---------- APARIENCIA ---------- */
+  async function uploadImage(file, prefix){
+    const path = `${prefix}-${Date.now()}-${file.name.replace(/\s+/g,"-")}`;
+    const { error } = await sb.storage.from("productos-fotos").upload(path, file);
+    if(error) throw error;
+    const { data } = sb.storage.from("productos-fotos").getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  document.getElementById("saveAppearanceBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("saveAppearanceBtn");
+    btn.disabled = true; btn.textContent = "Guardando…";
+    try{
+      const payload = {
+        color_primary: document.getElementById("aColorPrimary").value,
+        color_dark: document.getElementById("aColorDark").value,
+        color_background: document.getElementById("aColorBg").value,
+        catalog_layout: document.getElementById("aLayout").value,
+      };
+
+      const logoFile = document.getElementById("aLogo").files[0];
+      if(logoFile) payload.logo_url = await uploadImage(logoFile, "logo");
+
+      const coverFile = document.getElementById("aCover").files[0];
+      if(coverFile) payload.cover_image_url = await uploadImage(coverFile, "portada");
+
+      const { error } = await sb.from("config").update(payload).eq("id", 1);
+      if(error) throw error;
+
+      showMsg("appearanceMsg", "Apariencia guardada correctamente.", true);
+      document.getElementById("aLogo").value = "";
+      document.getElementById("aCover").value = "";
+      loadConfig();
+    }catch(err){
+      showMsg("appearanceMsg", "Error: " + err.message, false);
+    }finally{
+      btn.disabled = false;
+      btn.textContent = "Guardar apariencia";
+    }
   });
 
   /* ---------- PRODUCTOS ---------- */
