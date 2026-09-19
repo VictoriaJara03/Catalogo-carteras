@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo de Accesorios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#241a16; --ink-soft:#4a392f;
+    --paper:#ede3d0; --paper-raised:#f7f1e4;
+    --brass:#a97e45; --brass-deep:#7c5a2e; --berry:#6b2737;
+    --whatsapp:#25D366; --whatsapp-deep:#1da851;
+    --line: rgba(36,26,22,0.16); --line-soft: rgba(36,26,22,0.09);
+    --radius: 3px;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Manrope', -apple-system, 'Segoe UI', sans-serif;
+    --bg: var(--paper); --bg-raised: var(--paper-raised);
+    --fg: var(--ink); --fg-soft: var(--ink-soft);
+    --card-bg: #fbf7ee;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1c1512; --bg-raised:#241b17; --fg:#f1e8d8; --fg-soft:#c9b9a1;
+      --line: rgba(241,232,216,0.16); --line-soft: rgba(241,232,216,0.09);
+      --card-bg:#241b17; --brass:#cfa367;
+    }
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased;}
+  img{max-width:100%;display:block;}
+  a{color:inherit;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+  .announce{background:var(--ink);color:var(--paper-raised);font-size:13px;text-align:center;padding:9px 16px;}
+  .announce strong{color:var(--brass);font-weight:600;}
+  header{position:sticky;top:0;z-index:40;background:var(--bg);border-bottom:1px solid var(--line);}
+  .nav-row{display:flex;align-items:center;justify-content:space-between;padding:18px 0;gap:24px;position:relative;}
+  .brand{font-family:var(--serif);font-size:26px;font-weight:600;white-space:nowrap;}
+  .brand span{color:var(--brass);font-style:italic;font-weight:500;}
+  nav.categories{display:flex;gap:28px;align-items:center;flex-wrap:wrap;}
+  nav.categories button{background:none;border:none;cursor:pointer;font-family:var(--sans);font-size:15px;font-weight:600;color:var(--fg-soft);padding:6px 0;position:relative;}
+  nav.categories button::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--brass);transform:scaleX(0);transform-origin:left;transition:transform .25s ease;}
+  nav.categories button:hover{color:var(--fg);}
+  nav.categories button.active{color:var(--fg);}
+  nav.categories button.active::after{transform:scaleX(1);}
+  .header-actions{display:flex;align-items:center;gap:10px;}
+  .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);color:var(--fg);text-decoration:none;transition:background .2s ease;flex-shrink:0;}
+  .icon-btn:hover{background:var(--bg-raised);}
+  .icon-btn svg{width:18px;height:18px;}
+  .menu-toggle{display:none;background:none;border:none;cursor:pointer;padding:6px;}
+  .menu-toggle svg{width:26px;height:26px;color:var(--fg);}
+  .hero{padding:72px 0 64px;}
+  .hero .inner{display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:center;}
+  .hero-copy .eyebrow{font-size:14px;color:var(--brass-deep);font-weight:700;}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hero-copy .eyebrow{color:var(--brass);}}
+  .hero-copy h1{font-family:var(--serif);font-size:clamp(34px,5vw,54px);line-height:1.08;margin:14px 0 20px;font-weight:600;max-width:15ch;}
+  .hero-copy p{font-size:17px;line-height:1.6;color:var(--fg-soft);max-width:46ch;margin:0 0 30px;}
+  .hero-ctas{display:flex;gap:14px;flex-wrap:wrap;}
+  .btn{display:inline-flex;align-items:center;gap:9px;padding:14px 24px;border-radius:var(--radius);font-weight:700;font-size:15px;text-decoration:none;border:1px solid transparent;cursor:pointer;}
+  .btn-primary{background:var(--whatsapp);color:#fff;}
+  .btn-primary:hover{background:var(--whatsapp-deep);}
+  .btn-outline{background:transparent;border-color:var(--fg);color:var(--fg);}
+  .btn-outline:hover{background:var(--fg);color:var(--bg);}
+  .btn svg{width:18px;height:18px;flex-shrink:0;}
+  .hero-visual{position:relative;height:340px;}
+  .swatch{position:absolute;border-radius:var(--radius);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;box-shadow:0 18px 40px -22px rgba(36,26,22,.4);}
+  .swatch svg{width:34%;height:34%;opacity:.85;}
+  .sw1{width:62%;height:78%;top:0;left:6%;background:linear-gradient(150deg,#c9a874,#a97e45);}
+  .sw2{width:48%;height:52%;bottom:0;right:0;background:linear-gradient(150deg,#e3d3b3,#c9a874);}
+  .sw3{width:34%;height:34%;top:8%;right:4%;background:linear-gradient(150deg,#6b2737,#8c4356);}
+  .howto{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg-raised);}
+  .howto .wrap{display:grid;grid-template-columns:repeat(3,1fr);}
+  .howto-step{padding:30px 26px;border-left:1px solid var(--line);}
+  .howto-step:first-child{border-left:none;}
+  .howto-step .num{font-family:var(--serif);font-style:italic;font-size:22px;color:var(--brass);}
+  .howto-step h3{margin:8px 0 6px;font-size:16px;}
+  .howto-step p{margin:0;font-size:14px;color:var(--fg-soft);line-height:1.55;}
+  .catalog{padding:64px 0 30px;}
+  .catalog-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:30px;flex-wrap:wrap;}
+  .catalog-head h2{font-family:var(--serif);font-weight:600;font-size:32px;margin:0;}
+  .catalog-head p{margin:6px 0 0;color:var(--fg-soft);font-size:15px;}
+  .filter-count{font-size:14px;color:var(--fg-soft);}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:22px;}
+  .card{background:var(--card-bg);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s ease,transform .2s ease;}
+  .card:hover{border-color:var(--brass);transform:translateY(-3px);}
+  .card-media{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:#ddd0b8;}
+  .card-media img{width:100%;height:100%;object-fit:cover;}
+  .card-media svg{width:36%;height:36%;opacity:.9;}
+  .card-badge{position:absolute;top:10px;left:10px;background:var(--berry);color:#fff;font-size:11px;font-weight:700;padding:4px 9px;border-radius:2px;}
+  .card-body{padding:16px 16px 18px;display:flex;flex-direction:column;gap:4px;flex:1;}
+  .card-cat{font-size:12px;color:var(--fg-soft);text-transform:uppercase;letter-spacing:.06em;}
+  .card-name{font-size:16px;font-weight:700;margin:0;line-height:1.3;}
+  .card-price{font-family:var(--serif);font-size:19px;color:var(--brass-deep);margin:2px 0 12px;}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .card-price{color:var(--brass);}}
+  .card-cta{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:var(--radius);background:var(--whatsapp);color:#fff;text-decoration:none;font-weight:700;font-size:14px;}
+  .card-cta:hover{background:var(--whatsapp-deep);}
+  .card-cta svg{width:16px;height:16px;}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--fg-soft);border:1px dashed var(--line);border-radius:var(--radius);}
+  footer{margin-top:70px;background:var(--ink);color:var(--paper-raised);}
+  footer .wrap{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:40px;padding:56px 24px 34px;}
+  footer .f-brand{font-family:var(--serif);font-size:24px;margin:0 0 12px;}
+  footer .f-brand span{color:var(--brass);font-style:italic;}
+  footer p{color:#cbb9a3;font-size:14px;line-height:1.6;margin:0 0 18px;max-width:36ch;}
+  footer h4{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:#cbb9a3;margin:0 0 14px;}
+  footer .f-links{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;}
+  footer .f-links a{color:var(--paper-raised);text-decoration:none;font-size:15px;display:flex;align-items:center;gap:8px;}
+  footer .f-links a:hover{color:var(--brass);}
+  footer .f-links svg{width:16px;height:16px;flex-shrink:0;}
+  .f-bottom{border-top:1px solid rgba(241,232,216,.12);padding:18px 24px;text-align:center;font-size:13px;color:#a0917f;}
+  .floating-wa{position:fixed;right:22px;bottom:22px;z-index:50;width:58px;height:58px;border-radius:50%;background:var(--whatsapp);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 10px 26px -8px rgba(0,0,0,.45);}
+  .floating-wa:hover{background:var(--whatsapp-deep);}
+  .floating-wa svg{width:28px;height:28px;}
+  @media (max-width:880px){
+    .hero .inner{grid-template-columns:1fr;padding:0;}
+    .hero-visual{height:260px;order:-1;}
+    .howto .wrap{grid-template-columns:1fr;}
+    .howto-step{border-left:none;border-top:1px solid var(--line);}
+    .howto-step:first-child{border-top:none;}
+    footer .wrap{grid-template-columns:1fr;gap:28px;padding:44px 24px 24px;}
+  }
+  @media (max-width:720px){
+    nav.categories{display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg);border-bottom:1px solid var(--line);flex-direction:column;align-items:flex-start;gap:0;padding:6px 24px 14px;}
+    nav.categories.open{display:flex;}
+    nav.categories button{padding:10px 0;width:100%;text-align:left;}
+    .menu-toggle{display:inline-flex;}
+  }
+</style>
+</head>
+<body>
+
+<div class="announce">Este catálogo es solo informativo — <strong>coordinamos todo por WhatsApp o Instagram</strong>, sin pagos online.</div>
+
+<header>
+  <div class="wrap nav-row">
+    <div class="brand" id="brandName">Cargando…</div>
+    <nav class="categories" id="catNav"></nav>
+    <div class="header-actions">
+      <a class="icon-btn" id="instaLink" href="#" target="_blank" rel="noopener" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+      </a>
+      <a class="icon-btn" id="waHeaderLink" href="#" target="_blank" rel="noopener" aria-label="WhatsApp">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.87.51 3.62 1.4 5.13L2 22l5.13-1.5a9.8 9.8 0 0 0 4.9 1.32h.01c5.46 0 9.9-4.45 9.9-9.91C21.94 6.45 17.5 2 12.04 2Z"/></svg>
+      </a>
+      <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap inner">
+    <div class="hero-copy">
+      <div class="eyebrow">Catálogo mayorista y minorista</div>
+      <h1 id="heroTitle">Carteras y accesorios que se lucen solos</h1>
+      <p>Mirá el catálogo, elegí lo que te gusta y coordinamos todo directo por WhatsApp o Instagram — sin pagos ni registros.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" id="waHeroLink" href="#" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.87.51 3.62 1.4 5.13L2 22l5.13-1.5a9.8 9.8 0 0 0 4.9 1.32h.01c5.46 0 9.9-4.45 9.9-9.91C21.94 6.45 17.5 2 12.04 2Z"/></svg>
+          Escribinos por WhatsApp
+        </a>
+        <a class="btn btn-outline" href="#catalogo">Ver catálogo</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="swatch sw1"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.3"><path d="M7 9V7a5 5 0 0 1 10 0v2M4 9h16l-1.2 11.2A2 2 0 0 1 16.8 22H7.2a2 2 0 0 1-2-1.8L4 9Z"/></svg></div>
+      <div class="swatch sw2"><svg viewBox="0 0 24 24" fill="none" stroke="#3a2a1c" stroke-width="1.3"><rect x="3" y="7" width="18" height="12" rx="2"/><circle cx="12" cy="13" r="2.2"/></svg></div>
+      <div class="swatch sw3"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.3"><circle cx="9" cy="9" r="3.2"/><circle cx="16" cy="15" r="3.2"/></svg></div>
+    </div>
+  </div>
+</section>
+
+<section class="howto">
+  <div class="wrap">
+    <div class="howto-step"><div class="num">1</div><h3>Elegís del catálogo</h3><p>Navegá por categoría y encontrá el producto que te gusta, con precio incluido.</p></div>
+    <div class="howto-step"><div class="num">2</div><h3>Nos consultás</h3><p>Tocá "Consultar" y se abre WhatsApp con el producto ya escrito, o escribinos por Instagram.</p></div>
+    <div class="howto-step"><div class="num">3</div><h3>Coordinamos</h3><p>Te confirmamos stock, forma de pago y envío o retiro — todo de forma personalizada.</p></div>
+  </div>
+</section>
+
+<section class="catalog wrap" id="catalogo">
+  <div class="catalog-head">
+    <div><h2>Catálogo</h2><p>Precios sugeridos — confirmalos al consultar, pueden variar según stock.</p></div>
+    <div class="filter-count" id="filterCount"></div>
+  </div>
+  <div class="grid" id="productGrid"><div class="empty-state" style="grid-column:1/-1;">Cargando productos…</div></div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <p class="f-brand" id="footerBrand">Tu Marca</p>
+      <p>Accesorios de moda para todos los días. Catálogo actualizado — consultanos disponibilidad antes de decidir tu compra.</p>
+      <div style="display:flex;gap:10px;">
+        <a class="icon-btn" id="waFooterLink" href="#" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.87.51 3.62 1.4 5.13L2 22l5.13-1.5a9.8 9.8 0 0 0 4.9 1.32h.01c5.46 0 9.9-4.45 9.9-9.91C21.94 6.45 17.5 2 12.04 2Z"/></svg></a>
+        <a class="icon-btn" id="instaFooterLink" href="#" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
+      </div>
+    </div>
+    <div>
+      <h4>Contacto</h4>
+      <ul class="f-links">
+        <li id="footerPhone"></li>
+        <li id="footerInsta"></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg> <span id="footerAddress"></span></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Horarios</h4>
+      <ul class="f-links"><li id="footerHours"></li></ul>
+    </div>
+  </div>
+  <div class="f-bottom">© <span id="year"></span> <span id="footerCopyName"></span>. Catálogo sin venta online — consultas por WhatsApp e Instagram.</div>
+</footer>
+
+<a class="floating-wa" id="waFloating" href="#" target="_blank" rel="noopener" aria-label="Escribinos por WhatsApp">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.87.51 3.62 1.4 5.13L2 22l5.13-1.5a9.8 9.8 0 0 0 4.9 1.32h.01c5.46 0 9.9-4.45 9.9-9.91C21.94 6.45 17.5 2 12.04 2Zm0 18.14h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.1.91.94-3.02-.2-.31a8.17 8.17 0 0 1-1.26-4.38c0-4.53 3.68-8.21 8.22-8.21 2.2 0 4.26.86 5.82 2.42a8.16 8.16 0 0 1 2.4 5.8c0 4.53-3.7 8.22-8.32 8.22Z"/></svg>
+</a>
+
+<script>
+  /* ====== CONEXIÓN A SUPABASE ====== */
+  const SUPABASE_URL = "https://qzweopyturirdonqowrk.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_u3yQ8M8Ct1wmQxZWpNZWyQ_Ja78aAMa";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const fmtPrice = (n) => "$" + Number(n).toLocaleString("es-AR");
+  const waLink = (num, msg) => `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+  const instaLink = (user) => `https://instagram.com/${user}`;
+
+  const ICONS = {
+    bag:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.3"><path d="M7 9V7a5 5 0 0 1 10 0v2M4 9h16l-1.2 11.2A2 2 0 0 1 16.8 22H7.2a2 2 0 0 1-2-1.8L4 9Z"/></svg>`,
+    wallet:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.3"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M16 13h3"/></svg>`,
+    belt:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.3"><rect x="8" y="3" width="8" height="6" rx="1"/><path d="M12 9v12M9 21h6"/></svg>`,
+    ring:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.3"><circle cx="12" cy="14" r="6"/><path d="M9 9 12 3l3 6"/></svg>`,
+  };
+  const ICON_BY_CAT = { carteras:"bag", billeteras:"wallet", cintos:"belt", bijou:"ring" };
+  const VARIANTS = { 0:"linear-gradient(150deg,#c9a874,#a97e45)", 1:"linear-gradient(150deg,#8c6b3d,#5f4626)", 2:"linear-gradient(150deg,#6b2737,#8c4356)", 3:"linear-gradient(150deg,#3a2a1c,#5c4632)" };
+  const ICONS_WA = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.87.51 3.62 1.4 5.13L2 22l5.13-1.5a9.8 9.8 0 0 0 4.9 1.32h.01c5.46 0 9.9-4.45 9.9-9.91C21.94 6.45 17.5 2 12.04 2Z"/></svg>`;
+
+  let CONFIG = null, CATEGORIES = [], PRODUCTS = [];
+  let activeCategory = "todos";
+
+  async function loadData(){
+    const [{ data: config }, { data: categorias }, { data: productos }] = await Promise.all([
+      sb.from("config").select("*").eq("id", 1).single(),
+      sb.from("categorias").select("*").order("orden"),
+      sb.from("productos").select("*").eq("active", true).order("created_at", { ascending:false }),
+    ]);
+    CONFIG = config; CATEGORIES = categorias || []; PRODUCTS = productos || [];
+    applyConfig();
+    renderNav();
+    renderGrid();
+  }
+
+  function applyConfig(){
+    if(!CONFIG) return;
+    document.title = CONFIG.business_name + " — Catálogo de Accesorios";
+    document.getElementById("brandName").textContent = CONFIG.business_name;
+    document.getElementById("footerBrand").textContent = CONFIG.business_name;
+    document.getElementById("footerCopyName").textContent = CONFIG.business_name;
+    document.getElementById("footerAddress").textContent = CONFIG.address || "";
+    document.getElementById("footerHours").textContent = CONFIG.hours || "";
+    document.getElementById("footerPhone").innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px;"><path d="M3 5h4l2 5-2.5 1.5a11 11 0 0 0 5 5L13 14l5 2v4a2 2 0 0 1-2 2C8.5 22 2 15.5 2 7a2 2 0 0 1 2-2Z"/></svg> +${CONFIG.whatsapp_number}`;
+    document.getElementById("footerInsta").innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px;"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg> @${CONFIG.instagram_user}`;
+
+    const generalWa = waLink(CONFIG.whatsapp_number, CONFIG.default_wa_message);
+    ["waHeaderLink","waHeroLink","waFooterLink","waFloating"].forEach(id => document.getElementById(id).href = generalWa);
+    ["instaLink","instaFooterLink"].forEach(id => document.getElementById(id).href = instaLink(CONFIG.instagram_user));
+  }
+
+  function renderNav(){
+    const nav = document.getElementById("catNav");
+    const all = [{ id:"todos", label:"Todo" }, ...CATEGORIES];
+    nav.innerHTML = all.map(c => `<button data-cat="${c.id}" class="${c.id===activeCategory?"active":""}">${c.label}</button>`).join("");
+    nav.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeCategory = btn.dataset.cat;
+        renderNav(); renderGrid();
+        document.getElementById("catNav").classList.remove("open");
+      });
+    });
+  }
+
+  function renderGrid(){
+    const grid = document.getElementById("productGrid");
+    const list = activeCategory === "todos" ? PRODUCTS : PRODUCTS.filter(p => p.category === activeCategory);
+    document.getElementById("filterCount").textContent = `${list.length} producto${list.length===1?"":"s"}`;
+
+    if(!list.length){
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No hay productos cargados en esta categoría todavía.</div>`;
+      return;
+    }
+
+    grid.innerHTML = list.map((p, i) => {
+      const media = p.image_url
+        ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy">`
+        : `<div style="width:100%;height:100%;background:${VARIANTS[i%4]};display:flex;align-items:center;justify-content:center;">${ICONS[ICON_BY_CAT[p.category]||"bag"]}</div>`;
+      const catLabel = CATEGORIES.find(c=>c.id===p.category)?.label || p.category;
+      return `
+      <div class="card">
+        <div class="card-media">
+          ${p.badge ? `<span class="card-badge">${p.badge}</span>` : ""}
+          ${media}
+        </div>
+        <div class="card-body">
+          <div class="card-cat">${catLabel}</div>
+          <p class="card-name">${p.name}</p>
+          <p class="card-price">${fmtPrice(p.price)}</p>
+          <a class="card-cta" target="_blank" rel="noopener"
+             href="${waLink(CONFIG.whatsapp_number, `Hola! Me interesa este producto: ${p.name} (${fmtPrice(p.price)}). ¿Podrías darme más información?`)}">
+            ${ICONS_WA} Consultar
+          </a>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  document.getElementById("menuToggle").addEventListener("click", () => {
+    document.getElementById("catNav").classList.toggle("open");
+  });
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  loadData();
+</script>
+</body>
+</html>
