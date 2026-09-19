@@ -51,6 +51,10 @@
   .preview-thumb{position:relative;width:64px;height:64px;}
   .preview-thumb img{width:100%;height:100%;object-fit:cover;border-radius:4px;}
   .preview-thumb button{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--danger);color:#fff;border:none;font-size:12px;line-height:1;padding:0;cursor:pointer;}
+  .dropzone{border:2px dashed var(--line);border-radius:6px;padding:22px;text-align:center;cursor:pointer;color:var(--ink-soft);font-size:14px;transition:border-color .15s ease,background .15s ease;}
+  .dropzone p{margin:0;}
+  .dropzone.dragover{border-color:var(--brass);background:var(--bg-raised);color:var(--ink);}
+  .dropzone-link{color:var(--brass-deep);font-weight:700;text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -101,9 +105,13 @@
       <label for="pBadge">Etiqueta (opcional, ej: "Nuevo")</label>
       <input id="pBadge" type="text" placeholder="Dejar vacío si no querés etiqueta">
 
-      <label for="pImages">Fotos del producto (podés elegir varias a la vez)</label>
-      <input id="pImages" type="file" accept="image/*" multiple>
+      <label for="pImages">Fotos del producto (podés arrastrar varias, o hacer clic para elegir)</label>
+      <div class="dropzone" id="pImagesDrop">
+        <input id="pImages" type="file" accept="image/*" multiple style="display:none;">
+        <p>Arrastrá las fotos acá, o <span class="dropzone-link">elegí archivos</span></p>
+      </div>
       <div id="pImagesPreview" class="row" style="margin-top:10px;"></div>
+      <div id="pImagesPendingPreview" class="row" style="margin-top:6px;"></div>
 
       <div class="checkbox-row">
         <input id="pActive" type="checkbox" checked>
@@ -154,14 +162,20 @@
       <h1 style="font-size:18px;">Logo</h1>
       <p class="sub">Se muestra arriba a la izquierda, junto al nombre del negocio. Recomendado: fondo transparente (PNG), no muy alto.</p>
       <div id="logoPreviewWrap" class="hidden" style="margin-bottom:10px;"><img id="logoPreview" style="height:48px;width:auto;border-radius:4px;"></div>
-      <input id="aLogo" type="file" accept="image/*">
+      <div class="dropzone" id="aLogoDrop">
+        <input id="aLogo" type="file" accept="image/*" style="display:none;">
+        <p>Arrastrá una imagen acá, o <span class="dropzone-link">elegí un archivo</span></p>
+      </div>
     </div>
 
     <div class="card">
       <h1 style="font-size:18px;">Imagen de portada</h1>
       <p class="sub">Se muestra en la parte de arriba de la página, al lado del título. Recomendado: formato horizontal.</p>
       <div id="coverPreviewWrap" class="hidden" style="margin-bottom:10px;"><img id="coverPreview" style="height:120px;width:auto;border-radius:4px;object-fit:cover;"></div>
-      <input id="aCover" type="file" accept="image/*">
+      <div class="dropzone" id="aCoverDrop">
+        <input id="aCover" type="file" accept="image/*" style="display:none;">
+        <p>Arrastrá una imagen acá, o <span class="dropzone-link">elegí un archivo</span></p>
+      </div>
     </div>
 
     <div class="card">
@@ -215,6 +229,51 @@
   }
   document.getElementById("pPrice").addEventListener("input", (e) => {
     e.target.value = formatPriceDisplay(e.target.value);
+  });
+
+  /* ---------- arrastrar y soltar archivos ---------- */
+  function setupDropzone(zoneId, inputId, multiple){
+    const zone = document.getElementById(zoneId);
+    const input = document.getElementById(inputId);
+    zone.addEventListener("click", () => input.click());
+    zone.addEventListener("dragover", (e) => { e.preventDefault(); zone.classList.add("dragover"); });
+    zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+    zone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      zone.classList.remove("dragover");
+      const dropped = e.dataTransfer.files;
+      if(!dropped || !dropped.length) return;
+      const dt = new DataTransfer();
+      if(multiple){
+        Array.from(input.files).forEach(f => dt.items.add(f));
+        Array.from(dropped).forEach(f => dt.items.add(f));
+      } else {
+        dt.items.add(dropped[0]);
+      }
+      input.files = dt.files;
+      input.dispatchEvent(new Event("change"));
+    });
+  }
+  setupDropzone("pImagesDrop", "pImages", true);
+  setupDropzone("aLogoDrop", "aLogo", false);
+  setupDropzone("aCoverDrop", "aCover", false);
+
+  document.getElementById("pImages").addEventListener("change", () => {
+    const files = Array.from(document.getElementById("pImages").files);
+    const wrap = document.getElementById("pImagesPendingPreview");
+    wrap.innerHTML = files.map(f => `<div class="preview-thumb"><img src="${URL.createObjectURL(f)}"></div>`).join("");
+  });
+  document.getElementById("aLogo").addEventListener("change", () => {
+    const file = document.getElementById("aLogo").files[0];
+    if(!file) return;
+    document.getElementById("logoPreview").src = URL.createObjectURL(file);
+    document.getElementById("logoPreviewWrap").classList.remove("hidden");
+  });
+  document.getElementById("aCover").addEventListener("change", () => {
+    const file = document.getElementById("aCover").files[0];
+    if(!file) return;
+    document.getElementById("coverPreview").src = URL.createObjectURL(file);
+    document.getElementById("coverPreviewWrap").classList.remove("hidden");
   });
 
   function showMsg(id, text, ok){
@@ -425,6 +484,7 @@
     document.getElementById("pBadge").value = "";
     document.getElementById("pActive").checked = true;
     document.getElementById("pImages").value = "";
+    document.getElementById("pImagesPendingPreview").innerHTML = "";
     renderImagePreview();
     document.getElementById("cancelEditBtn").classList.add("hidden");
     document.getElementById("saveProductBtn").textContent = "Guardar producto";
