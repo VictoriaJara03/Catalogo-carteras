@@ -139,9 +139,8 @@
   }
   .modal-close svg{width:18px;height:18px;}
   .modal-media{position:relative;background:var(--bg-raised);display:flex;flex-direction:column;overflow:hidden;}
-  .modal-media.zoomed{overflow:auto;}
-  .modal-media img#modalMainImg{width:100%;flex:1;object-fit:cover;min-height:280px;max-height:60vh;cursor:zoom-in;}
-  .modal-media.zoomed img#modalMainImg{width:220%;max-width:none;height:auto;max-height:none;flex:none;object-fit:contain;cursor:zoom-out;}
+  .modal-media img#modalMainImg{width:100%;flex:1;object-fit:cover;min-height:280px;max-height:60vh;cursor:zoom-in;transform-origin:center;transition:transform .05s linear;}
+  .modal-media.zoomed img#modalMainImg{transform:scale(2.4);cursor:zoom-out;}
   .modal-nav{position:absolute;top:45%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.88);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);z-index:2;}
   .modal-nav:hover{background:#fff;}
   .modal-nav-prev{left:12px;}
@@ -506,13 +505,41 @@
   }
   window.showModalImage = showModalImage;
 
-  /* ---------- zoom ---------- */
+  /* ---------- zoom (sigue el punto exacto del clic/toque) ---------- */
   function resetModalZoom(){
     document.getElementById("modalMedia").classList.remove("zoomed");
+    document.getElementById("modalMainImg").style.transformOrigin = "center";
   }
-  document.getElementById("modalMainImg").addEventListener("click", () => {
-    document.getElementById("modalMedia").classList.toggle("zoomed");
+
+  function updateZoomOrigin(clientX, clientY){
+    const img = document.getElementById("modalMainImg");
+    const rect = img.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
+    img.style.transformOrigin = `${x}% ${y}%`;
+  }
+
+  const modalMainImgEl = document.getElementById("modalMainImg");
+
+  modalMainImgEl.addEventListener("click", (e) => {
+    const zoomed = document.getElementById("modalMedia").classList.toggle("zoomed");
+    if(zoomed){
+      updateZoomOrigin(e.clientX, e.clientY);
+    } else {
+      modalMainImgEl.style.transformOrigin = "center";
+    }
   });
+  modalMainImgEl.addEventListener("mousemove", (e) => {
+    if(document.getElementById("modalMedia").classList.contains("zoomed")){
+      updateZoomOrigin(e.clientX, e.clientY);
+    }
+  });
+  modalMainImgEl.addEventListener("touchmove", (e) => {
+    if(document.getElementById("modalMedia").classList.contains("zoomed") && e.touches[0]){
+      e.preventDefault();
+      updateZoomOrigin(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive:false });
 
   window.closeProductModal = function(){
     document.getElementById("modalOverlay").classList.remove("open");
