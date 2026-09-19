@@ -55,6 +55,12 @@
   .dropzone p{margin:0;}
   .dropzone.dragover{border-color:var(--brass);background:var(--bg-raised);color:var(--ink);}
   .dropzone-link{color:var(--brass-deep);font-weight:700;text-decoration:underline;}
+  .cat-list{list-style:none;padding:0;margin:0;}
+  .cat-item{display:flex;align-items:center;gap:12px;padding:10px 6px;border-bottom:1px solid var(--line);background:#fbf7ee;}
+  .cat-item:last-child{border-bottom:none;}
+  .cat-item.dragging{opacity:.35;}
+  .cat-handle{cursor:grab;font-size:20px;color:var(--ink-soft);user-select:none;padding:4px 10px;touch-action:none;}
+  .cat-label{flex:1;font-weight:700;font-size:14px;}
 </style>
 </head>
 <body>
@@ -140,10 +146,8 @@
   <div id="tab-categorias" class="hidden">
     <div class="card">
       <h1 style="font-size:18px;">Categorías actuales</h1>
-      <table>
-        <thead><tr><th>Nombre</th><th>Orden</th><th></th></tr></thead>
-        <tbody id="categoriesTableBody"></tbody>
-      </table>
+      <p class="sub">Mantené presionado el ícono ⠿ y arrastrá para cambiar el orden en que aparecen en el catálogo.</p>
+      <ul class="cat-list" id="categoriesList"></ul>
     </div>
     <div class="card">
       <h1 style="font-size:18px;">Agregar categoría</h1>
@@ -389,34 +393,62 @@
     const { data } = await sb.from("categorias").select("*").order("orden");
     CATEGORIES = data || [];
     document.getElementById("pCategory").innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.label}</option>`).join("");
-
-    const tbody = document.getElementById("categoriesTableBody");
-    if(!CATEGORIES.length){
-      tbody.innerHTML = `<tr><td colspan="3">No hay categorías cargadas.</td></tr>`;
-      return;
-    }
-    tbody.innerHTML = CATEGORIES.map((c, i) => `
-      <tr>
-        <td>${c.label}</td>
-        <td>${c.orden}</td>
-        <td class="row">
-          <button class="btn-outline btn-small" onclick="moveCategory('${c.id}',-1)" ${i===0 ? "disabled" : ""}>↑</button>
-          <button class="btn-outline btn-small" onclick="moveCategory('${c.id}',1)" ${i===CATEGORIES.length-1 ? "disabled" : ""}>↓</button>
-          <button class="btn-danger" onclick="deleteCategory('${c.id}')">Borrar</button>
-        </td>
-      </tr>
-    `).join("");
+    renderCategoriesList();
   }
 
-  window.moveCategory = async function(id, dir){
-    const idx = CATEGORIES.findIndex(c => c.id === id);
-    const swapIdx = idx + dir;
-    if(swapIdx < 0 || swapIdx >= CATEGORIES.length) return;
-    const a = CATEGORIES[idx], b = CATEGORIES[swapIdx];
-    await sb.from("categorias").update({ orden: b.orden }).eq("id", a.id);
-    await sb.from("categorias").update({ orden: a.orden }).eq("id", b.id);
-    loadCategoriesTab();
-  };
+  function renderCategoriesList(){
+    const list = document.getElementById("categoriesList");
+    if(!CATEGORIES.length){
+      list.innerHTML = `<li class="sub" style="padding:10px 0;">No hay categorías cargadas.</li>`;
+      return;
+    }
+    list.innerHTML = CATEGORIES.map(c => `
+      <li class="cat-item" data-id="${c.id}">
+        <span class="cat-handle">⠿</span>
+        <span class="cat-label">${c.label}</span>
+        <button class="btn-danger btn-small" onclick="deleteCategory('${c.id}')">Borrar</button>
+      </li>
+    `).join("");
+    list.querySelectorAll(".cat-handle").forEach(handle => {
+      handle.addEventListener("pointerdown", startCategoryDrag);
+    });
+  }
+
+  let dragCatEl = null;
+
+  function startCategoryDrag(e){
+    e.preventDefault();
+    dragCatEl = e.target.closest(".cat-item");
+    dragCatEl.classList.add("dragging");
+    document.addEventListener("pointermove", onCategoryDragMove);
+    document.addEventListener("pointerup", onCategoryDragEnd);
+  }
+
+  function onCategoryDragMove(e){
+    if(!dragCatEl) return;
+    const list = document.getElementById("categoriesList");
+    const items = Array.from(list.querySelectorAll(".cat-item:not(.dragging)"));
+    let nextSibling = null;
+    for(const item of items){
+      const rect = item.getBoundingClientRect();
+      if(e.clientY < rect.top + rect.height / 2){ nextSibling = item; break; }
+    }
+    if(nextSibling) list.insertBefore(dragCatEl, nextSibling);
+    else list.appendChild(dragCatEl);
+  }
+
+  async function onCategoryDragEnd(){
+    document.removeEventListener("pointermove", onCategoryDragMove);
+    document.removeEventListener("pointerup", onCategoryDragEnd);
+    if(!dragCatEl) return;
+    dragCatEl.classList.remove("dragging");
+    dragCatEl = null;
+
+    const orderedIds = Array.from(document.querySelectorAll("#categoriesList .cat-item")).map(el => el.dataset.id);
+    CATEGORIES = orderedIds.map(id => CATEGORIES.find(c => c.id === id));
+    document.getElementById("pCategory").innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.label}</option>`).join("");
+    await Promise.all(CATEGORIES.map((c, i) => sb.from("categorias").update({ orden: i + 1 }).eq("id", c.id)));
+  }
 
   window.deleteCategory = async function(id){
     if(!confirm("¿Borrar esta categoría?")) return;
