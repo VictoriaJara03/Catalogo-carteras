@@ -172,6 +172,12 @@
       <input id="tDescription" type="text">
       <label for="tFooterDescription">Descripción en el pie de página</label>
       <input id="tFooterDescription" type="text">
+      <label for="tAnnounce">Texto de la barra superior</label>
+      <input id="tAnnounce" type="text">
+      <label for="tCatalogSubtitle">Subtítulo debajo de "Catálogo"</label>
+      <input id="tCatalogSubtitle" type="text">
+      <label for="tPaymentMethods">Medios de pago (separados por coma)</label>
+      <input id="tPaymentMethods" type="text" placeholder="Ej: Efectivo, Transferencia, Link de pago">
     </div>
     <div class="card">
       <h1 style="font-size:18px;">Tamaño de los textos</h1>
@@ -246,6 +252,24 @@
       <input id="aColorDark" type="color">
       <label for="aColorBg">Color de fondo</label>
       <input id="aColorBg" type="color">
+    </div>
+
+    <div class="card">
+      <h1 style="font-size:18px;">Tipografía</h1>
+      <label for="aBrandFont">Fuente del nombre de la marca</label>
+      <select id="aBrandFont">
+        <option value="fraunces">Clásica (Fraunces)</option>
+        <option value="playfair">Elegante (Playfair Display)</option>
+        <option value="dancing">Manuscrita (Dancing Script)</option>
+        <option value="pacifico">Divertida (Pacifico)</option>
+      </select>
+      <label for="aBodyFont">Fuente del resto de los textos</label>
+      <select id="aBodyFont">
+        <option value="manrope">Moderna (Manrope)</option>
+        <option value="poppins">Redondeada (Poppins)</option>
+        <option value="lato">Amigable (Lato)</option>
+        <option value="worksans">Neutra (Work Sans)</option>
+      </select>
     </div>
 
     <div class="card">
@@ -484,6 +508,9 @@
       hero_title: document.getElementById("tTitle").value.trim(),
       hero_description: document.getElementById("tDescription").value.trim(),
       footer_description: document.getElementById("tFooterDescription").value.trim(),
+      announce_text: document.getElementById("tAnnounce").value.trim(),
+      catalog_subtitle: document.getElementById("tCatalogSubtitle").value.trim(),
+      payment_methods: document.getElementById("tPaymentMethods").value.trim(),
       title_size: document.getElementById("tTitleSize").value,
       text_size: document.getElementById("tTextSize").value,
     };
@@ -521,8 +548,13 @@
     document.getElementById("tTitle").value = data.hero_title || "Carteras y accesorios que se lucen solos";
     document.getElementById("tDescription").value = data.hero_description || "Mirá el catálogo, elegí lo que te gusta y coordinamos todo directo por WhatsApp o Instagram — sin pagos ni registros.";
     document.getElementById("tFooterDescription").value = data.footer_description || "Accesorios de moda para todos los días. Catálogo actualizado — consultanos disponibilidad antes de decidir tu compra.";
+    document.getElementById("tAnnounce").value = data.announce_text || "Este catálogo es solo informativo — coordinamos todo por WhatsApp o Instagram, sin pagos online.";
+    document.getElementById("tCatalogSubtitle").value = data.catalog_subtitle || "Precios sugeridos — confirmalos al consultar, pueden variar según stock.";
+    document.getElementById("tPaymentMethods").value = data.payment_methods || "Efectivo, Transferencia, Link de pago";
     document.getElementById("tTitleSize").value = data.title_size || "md";
     document.getElementById("tTextSize").value = data.text_size || "md";
+    document.getElementById("aBrandFont").value = data.brand_font || "fraunces";
+    document.getElementById("aBodyFont").value = data.body_font || "manrope";
   }
 
   document.getElementById("saveConfigBtn").addEventListener("click", async () => {
@@ -557,6 +589,8 @@
         color_dark: document.getElementById("aColorDark").value,
         color_background: document.getElementById("aColorBg").value,
         catalog_layout: document.getElementById("aLayout").value,
+        brand_font: document.getElementById("aBrandFont").value,
+        body_font: document.getElementById("aBodyFont").value,
       };
 
       const logoFile = document.getElementById("aLogo").files[0];
