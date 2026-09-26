@@ -97,6 +97,8 @@
   }
   .card-badge{position:absolute;top:10px;left:10px;background:var(--berry);color:#fff;font-size:11px;font-weight:700;padding:4px 9px;border-radius:2px;}
   .card-photo-count{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;}
+  .card-offer-badge{position:absolute;top:10px;right:10px;background:var(--whatsapp);color:#fff;font-size:11px;font-weight:700;padding:4px 9px;border-radius:2px;}
+  nav.categories button.nav-offer{color:var(--berry);}
   .card-body{padding:16px 16px 18px;display:flex;flex-direction:column;gap:4px;flex:1;}
   .card-cat{font-size:12px;color:var(--fg-soft);text-transform:uppercase;letter-spacing:.06em;}
   .card-name{font-size:16px;font-weight:700;margin:0;line-height:1.3;}
@@ -153,8 +155,9 @@
   .modal-thumb.active{border-color:var(--brass);}
   .modal-info{padding:32px;overflow-y:auto;}
   .modal-info h2{font-family:var(--serif);font-size:26px;margin:6px 0 10px;}
-  .modal-badge{margin-bottom:8px;}
+  .modal-badge{margin-bottom:8px;margin-right:6px;}
   .modal-price{font-family:var(--serif);font-size:26px;color:var(--brass-deep);margin:0 0 22px;}
+  .modal-description{font-size:14.5px;line-height:1.6;color:var(--fg-soft);margin:-12px 0 22px;white-space:pre-line;}
   @media (max-width:720px){
     .modal-panel{grid-template-columns:1fr; max-height:92vh; overflow-y:auto;}
     .modal-media img#modalMainImg{max-height:42vh;}
@@ -302,7 +305,9 @@
       <div class="card-cat" id="modalCat"></div>
       <h2 id="modalName"></h2>
       <span class="card-badge modal-badge" id="modalBadge" style="display:none;position:static;"></span>
+      <span class="card-offer-badge modal-badge" id="modalOfferBadge" style="display:none;position:static;">Oferta</span>
       <p class="modal-price" id="modalPrice"></p>
+      <p class="modal-description" id="modalDescription"></p>
       <a class="btn btn-primary" id="modalWaBtn" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.87.51 3.62 1.4 5.13L2 22l5.13-1.5a9.8 9.8 0 0 0 4.9 1.32h.01c5.46 0 9.9-4.45 9.9-9.91C21.94 6.45 17.5 2 12.04 2Z"/></svg>
         Consultar por WhatsApp
@@ -464,8 +469,13 @@
 
   function renderNav(){
     const nav = document.getElementById("catNav");
-    const all = [{ id:"todos", label:"Todo" }, ...CATEGORIES];
-    nav.innerHTML = all.map(c => `<button data-cat="${c.id}" class="${c.id===activeCategory?"active":""}">${c.label}</button>`).join("");
+    const hasOffers = PRODUCTS.some(p => p.on_offer);
+    const all = [
+      { id:"todos", label:"Todo" },
+      ...(hasOffers ? [{ id:"ofertas", label:"🔥 Ofertas" }] : []),
+      ...CATEGORIES,
+    ];
+    nav.innerHTML = all.map(c => `<button data-cat="${c.id}" class="${c.id===activeCategory?"active":""}${c.id==="ofertas"?" nav-offer":""}">${c.label}</button>`).join("");
     nav.querySelectorAll("button").forEach(btn => {
       btn.addEventListener("click", () => {
         activeCategory = btn.dataset.cat;
@@ -479,7 +489,11 @@
   function renderGrid(){
     const grid = document.getElementById("productGrid");
     grid.classList.toggle("list-view", CONFIG && CONFIG.catalog_layout === "list");
-    const list = sortProducts(activeCategory === "todos" ? PRODUCTS : PRODUCTS.filter(p => p.category === activeCategory));
+    const list = sortProducts(
+      activeCategory === "todos" ? PRODUCTS :
+      activeCategory === "ofertas" ? PRODUCTS.filter(p => p.on_offer) :
+      PRODUCTS.filter(p => p.category === activeCategory)
+    );
     document.getElementById("filterCount").textContent = `${list.length} producto${list.length===1?"":"s"}`;
 
     if(!list.length){
@@ -497,6 +511,7 @@
       <div class="card" onclick="openProductModal(${p.id})">
         <div class="card-media">
           ${p.badge ? `<span class="card-badge">${p.badge}</span>` : ""}
+          ${p.on_offer ? `<span class="card-offer-badge">Oferta</span>` : ""}
           ${imgs.length > 1 ? `<span class="card-photo-count">📷 ${imgs.length}</span>` : ""}
           ${media}
         </div>
@@ -527,8 +542,12 @@
     document.getElementById("modalCat").textContent = catLabel;
     document.getElementById("modalName").textContent = p.name;
     document.getElementById("modalPrice").textContent = fmtPrice(p.price);
+    const descEl = document.getElementById("modalDescription");
+    descEl.textContent = p.description || "";
+    descEl.style.display = p.description ? "block" : "none";
     document.getElementById("modalBadge").style.display = p.badge ? "inline-block" : "none";
     document.getElementById("modalBadge").textContent = p.badge || "";
+    document.getElementById("modalOfferBadge").style.display = p.on_offer ? "inline-block" : "none";
     document.getElementById("modalWaBtn").href = waLink(CONFIG.whatsapp_number, `Hola! Me interesa este producto: ${p.name} (${fmtPrice(p.price)}). ¿Podrías darme más información?`);
 
     const showNav = modalImages.length > 1;
