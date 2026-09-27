@@ -95,6 +95,7 @@
     <button data-tab="textos">Textos</button>
     <button data-tab="config">Datos de contacto</button>
     <button data-tab="apariencia">Apariencia</button>
+    <button data-tab="estadisticas">Estadísticas</button>
   </div>
 
   <!-- ===== TAB PRODUCTOS ===== -->
@@ -295,6 +296,21 @@
       <div class="msg" id="appearanceMsg"></div>
     </div>
   </div>
+
+  <!-- ===== TAB ESTADISTICAS ===== -->
+  <div id="tab-estadisticas" class="hidden">
+    <div class="card">
+      <h1 style="font-size:18px;">Productos más vistos</h1>
+      <p class="sub">Se suma una vista cada vez que alguien abre la ficha de un producto en el catálogo.</p>
+      <table>
+        <thead><tr><th>Producto</th><th>Categoría</th><th>Vistas</th></tr></thead>
+        <tbody id="statsTableBody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <p class="sub">Para saber cuánta gente entra al catálogo en total (no solo qué producto miran), activá <strong>Web Analytics</strong> en tu proyecto de Vercel: entrá a tu proyecto → pestaña "Analytics" → "Enable". Es gratis y no necesita más cambios de código.</p>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -406,9 +422,10 @@
     btn.addEventListener("click", () => {
       document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-      ["productos","categorias","textos","config","apariencia"].forEach(t => {
+      ["productos","categorias","textos","config","apariencia","estadisticas"].forEach(t => {
         document.getElementById("tab-" + t).classList.toggle("hidden", btn.dataset.tab !== t);
       });
+      if(btn.dataset.tab === "estadisticas") loadStats();
     });
   });
 
@@ -620,6 +637,23 @@
       btn.textContent = "Guardar apariencia";
     }
   });
+
+  /* ---------- ESTADISTICAS ---------- */
+  async function loadStats(){
+    const { data } = await sb.from("productos").select("*").order("views", { ascending:false });
+    const tbody = document.getElementById("statsTableBody");
+    if(!data || !data.length){
+      tbody.innerHTML = `<tr><td colspan="3">Todavía no hay datos.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = data.map(p => `
+      <tr>
+        <td>${p.name}</td>
+        <td>${CATEGORIES.find(c=>c.id===p.category)?.label || p.category}</td>
+        <td>${p.views || 0}</td>
+      </tr>
+    `).join("");
+  }
 
   /* ---------- PRODUCTOS ---------- */
   async function loadProducts(){
