@@ -188,6 +188,22 @@
       <input id="tPaymentMethods" type="text" placeholder="Ej: Efectivo, Transferencia, Link de pago">
     </div>
     <div class="card">
+      <h1 style="font-size:18px;">Pasos para comprar</h1>
+      <p class="sub">Es la franja de 3 pasos (1, 2, 3) que aparece debajo del encabezado.</p>
+      <label for="tHowto1Title">Paso 1 — título</label>
+      <input id="tHowto1Title" type="text">
+      <label for="tHowto1Text">Paso 1 — descripción</label>
+      <input id="tHowto1Text" type="text">
+      <label for="tHowto2Title">Paso 2 — título</label>
+      <input id="tHowto2Title" type="text">
+      <label for="tHowto2Text">Paso 2 — descripción</label>
+      <input id="tHowto2Text" type="text">
+      <label for="tHowto3Title">Paso 3 — título</label>
+      <input id="tHowto3Title" type="text">
+      <label for="tHowto3Text">Paso 3 — descripción</label>
+      <input id="tHowto3Text" type="text">
+    </div>
+    <div class="card">
       <h1 style="font-size:18px;">Tamaño de los textos</h1>
       <label for="tTitleSize">Tamaño del título principal</label>
       <select id="tTitleSize">
@@ -535,6 +551,12 @@
       announce_text: document.getElementById("tAnnounce").value.trim(),
       catalog_subtitle: document.getElementById("tCatalogSubtitle").value.trim(),
       payment_methods: document.getElementById("tPaymentMethods").value.trim(),
+      howto1_title: document.getElementById("tHowto1Title").value.trim(),
+      howto1_text: document.getElementById("tHowto1Text").value.trim(),
+      howto2_title: document.getElementById("tHowto2Title").value.trim(),
+      howto2_text: document.getElementById("tHowto2Text").value.trim(),
+      howto3_title: document.getElementById("tHowto3Title").value.trim(),
+      howto3_text: document.getElementById("tHowto3Text").value.trim(),
       title_size: document.getElementById("tTitleSize").value,
       text_size: document.getElementById("tTextSize").value,
     };
@@ -575,6 +597,12 @@
     document.getElementById("tAnnounce").value = data.announce_text || "Este catálogo es solo informativo — coordinamos todo por WhatsApp o Instagram, sin pagos online.";
     document.getElementById("tCatalogSubtitle").value = data.catalog_subtitle || "Precios sugeridos — confirmalos al consultar, pueden variar según stock.";
     document.getElementById("tPaymentMethods").value = data.payment_methods || "Efectivo, Transferencia, Link de pago";
+    document.getElementById("tHowto1Title").value = data.howto1_title || "Elegís del catálogo";
+    document.getElementById("tHowto1Text").value = data.howto1_text || "Navegá por categoría y encontrá el producto que te gusta, con precio incluido.";
+    document.getElementById("tHowto2Title").value = data.howto2_title || "Nos consultás";
+    document.getElementById("tHowto2Text").value = data.howto2_text || "Tocá \"Consultar\" y se abre WhatsApp con el producto ya escrito, o escribinos por Instagram.";
+    document.getElementById("tHowto3Title").value = data.howto3_title || "Coordinamos";
+    document.getElementById("tHowto3Text").value = data.howto3_text || "Te confirmamos stock, forma de pago y envío o retiro — todo de forma personalizada.";
     document.getElementById("tTitleSize").value = data.title_size || "md";
     document.getElementById("tTextSize").value = data.text_size || "md";
     document.getElementById("aBrandFont").value = data.brand_font || "fraunces";

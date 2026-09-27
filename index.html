@@ -273,9 +273,9 @@
 
 <section class="howto">
   <div class="wrap">
-    <div class="howto-step"><div class="num">1</div><h3>Elegís del catálogo</h3><p>Navegá por categoría y encontrá el producto que te gusta, con precio incluido.</p></div>
-    <div class="howto-step"><div class="num">2</div><h3>Nos consultás</h3><p>Tocá "Consultar" y se abre WhatsApp con el producto ya escrito, o escribinos por Instagram.</p></div>
-    <div class="howto-step"><div class="num">3</div><h3>Coordinamos</h3><p>Te confirmamos stock, forma de pago y envío o retiro — todo de forma personalizada.</p></div>
+    <div class="howto-step"><div class="num">1</div><h3 id="howto1Title">Elegís del catálogo</h3><p id="howto1Text">Navegá por categoría y encontrá el producto que te gusta, con precio incluido.</p></div>
+    <div class="howto-step"><div class="num">2</div><h3 id="howto2Title">Nos consultás</h3><p id="howto2Text">Tocá "Consultar" y se abre WhatsApp con el producto ya escrito, o escribinos por Instagram.</p></div>
+    <div class="howto-step"><div class="num">3</div><h3 id="howto3Title">Coordinamos</h3><p id="howto3Text">Te confirmamos stock, forma de pago y envío o retiro — todo de forma personalizada.</p></div>
   </div>
 </section>
 
@@ -534,6 +534,13 @@
 
     const methods = (CONFIG.payment_methods || "Efectivo, Transferencia, Link de pago").split(",").map(m => m.trim()).filter(Boolean);
     document.getElementById("footerPaymentMethods").innerHTML = methods.map(m => `<li>${m}</li>`).join("");
+
+    document.getElementById("howto1Title").textContent = CONFIG.howto1_title || "Elegís del catálogo";
+    document.getElementById("howto1Text").textContent = CONFIG.howto1_text || "Navegá por categoría y encontrá el producto que te gusta, con precio incluido.";
+    document.getElementById("howto2Title").textContent = CONFIG.howto2_title || "Nos consultás";
+    document.getElementById("howto2Text").textContent = CONFIG.howto2_text || "Tocá \"Consultar\" y se abre WhatsApp con el producto ya escrito, o escribinos por Instagram.";
+    document.getElementById("howto3Title").textContent = CONFIG.howto3_title || "Coordinamos";
+    document.getElementById("howto3Text").textContent = CONFIG.howto3_text || "Te confirmamos stock, forma de pago y envío o retiro — todo de forma personalizada.";
     document.getElementById("footerPhone").innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px;"><path d="M3 5h4l2 5-2.5 1.5a11 11 0 0 0 5 5L13 14l5 2v4a2 2 0 0 1-2 2C8.5 22 2 15.5 2 7a2 2 0 0 1 2-2Z"/></svg> +${CONFIG.whatsapp_number}`;
     document.getElementById("footerInsta").innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:16px;height:16px;"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg> @${CONFIG.instagram_user}`;
 
