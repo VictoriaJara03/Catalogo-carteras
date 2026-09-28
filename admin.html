@@ -133,6 +133,10 @@
         <input id="pOnOffer" type="checkbox">
         <label for="pOnOffer" style="margin:0;">Mostrar también en la sección de Ofertas</label>
       </div>
+      <div class="checkbox-row">
+        <input id="pIsNew" type="checkbox">
+        <label for="pIsNew" style="margin:0;">Mostrar en "Nuevos lanzamientos" (arriba de todo)</label>
+      </div>
 
       <div class="row" style="margin-top:18px;">
         <button class="btn-primary" id="saveProductBtn">Guardar producto</button>
@@ -186,6 +190,10 @@
       <input id="tCatalogSubtitle" type="text">
       <label for="tPaymentMethods">Medios de pago (separados por coma)</label>
       <input id="tPaymentMethods" type="text" placeholder="Ej: Efectivo, Transferencia, Link de pago">
+      <label for="tNewArrivalsTitle">Título de "Nuevos lanzamientos"</label>
+      <input id="tNewArrivalsTitle" type="text">
+      <label for="tNewArrivalsSubtitle">Subtítulo de "Nuevos lanzamientos"</label>
+      <input id="tNewArrivalsSubtitle" type="text">
     </div>
     <div class="card">
       <h1 style="font-size:18px;">Pasos para comprar</h1>
@@ -551,6 +559,8 @@
       announce_text: document.getElementById("tAnnounce").value.trim(),
       catalog_subtitle: document.getElementById("tCatalogSubtitle").value.trim(),
       payment_methods: document.getElementById("tPaymentMethods").value.trim(),
+      new_arrivals_title: document.getElementById("tNewArrivalsTitle").value.trim(),
+      new_arrivals_subtitle: document.getElementById("tNewArrivalsSubtitle").value.trim(),
       howto1_title: document.getElementById("tHowto1Title").value.trim(),
       howto1_text: document.getElementById("tHowto1Text").value.trim(),
       howto2_title: document.getElementById("tHowto2Title").value.trim(),
@@ -597,6 +607,8 @@
     document.getElementById("tAnnounce").value = data.announce_text || "Este catálogo es solo informativo — coordinamos todo por WhatsApp o Instagram, sin pagos online.";
     document.getElementById("tCatalogSubtitle").value = data.catalog_subtitle || "Precios sugeridos — confirmalos al consultar, pueden variar según stock.";
     document.getElementById("tPaymentMethods").value = data.payment_methods || "Efectivo, Transferencia, Link de pago";
+    document.getElementById("tNewArrivalsTitle").value = data.new_arrivals_title || "Nuevos lanzamientos";
+    document.getElementById("tNewArrivalsSubtitle").value = data.new_arrivals_subtitle || "Lo último que sumamos al catálogo";
     document.getElementById("tHowto1Title").value = data.howto1_title || "Elegís del catálogo";
     document.getElementById("tHowto1Text").value = data.howto1_text || "Navegá por categoría y encontrá el producto que te gusta, con precio incluido.";
     document.getElementById("tHowto2Title").value = data.howto2_title || "Nos consultás";
@@ -696,7 +708,7 @@
       return `
       <tr>
         <td>${thumb ? `<img src="${thumb}">` : `<span class="thumb-empty"></span>`}</td>
-        <td>${p.name}${p.on_offer ? ' <span title="En oferta">🔥</span>' : ""}</td>
+        <td>${p.name}${p.on_offer ? ' <span title="En oferta">🔥</span>' : ""}${p.is_new ? ' <span title="En Nuevos lanzamientos">✨</span>' : ""}</td>
         <td>${CATEGORIES.find(c=>c.id===p.category)?.label || p.category}</td>
         <td>$${Number(p.price).toLocaleString("es-AR", { maximumFractionDigits:2 })}</td>
         <td>${p.active ? "Sí" : "No"}</td>
@@ -735,6 +747,7 @@
     document.getElementById("pDescription").value = p.description || "";
     document.getElementById("pActive").checked = p.active;
     document.getElementById("pOnOffer").checked = !!p.on_offer;
+    document.getElementById("pIsNew").checked = !!p.is_new;
     editingImages = (p.images && p.images.length) ? [...p.images] : (p.image_url ? [p.image_url] : []);
     renderImagePreview();
     document.getElementById("cancelEditBtn").classList.remove("hidden");
@@ -759,6 +772,7 @@
     document.getElementById("pDescription").value = "";
     document.getElementById("pActive").checked = true;
     document.getElementById("pOnOffer").checked = false;
+    document.getElementById("pIsNew").checked = false;
     document.getElementById("pImages").value = "";
     document.getElementById("pImagesPendingPreview").innerHTML = "";
     renderImagePreview();
@@ -776,6 +790,7 @@
     const description = document.getElementById("pDescription").value.trim() || null;
     const active = document.getElementById("pActive").checked;
     const on_offer = document.getElementById("pOnOffer").checked;
+    const is_new = document.getElementById("pIsNew").checked;
     const files = Array.from(document.getElementById("pImages").files);
 
     if(!name || !category || !price){
@@ -797,7 +812,7 @@
       }
 
       const payload = {
-        name, category, price, badge, active, description, on_offer,
+        name, category, price, badge, active, description, on_offer, is_new,
         images: finalImages,
         image_url: finalImages[0] || null,
       };
