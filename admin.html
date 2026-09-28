@@ -111,6 +111,10 @@
       <label for="pPrice">Precio</label>
       <input id="pPrice" type="text" inputmode="decimal" placeholder="Ej: 24.000">
 
+      <label for="pStock">Cantidad en stock</label>
+      <input id="pStock" type="number" min="0" step="1" placeholder="Ej: 5">
+      <p class="sub" style="margin-top:4px;">Por ahora esto solo lo ves vos acá en el panel, no se muestra en el catálogo público.</p>
+
       <label for="pBadge">Etiqueta (opcional, ej: "Nuevo")</label>
       <input id="pBadge" type="text" placeholder="Dejar vacío si no querés etiqueta">
 
@@ -147,8 +151,14 @@
 
     <div class="card">
       <h1 style="font-size:18px;">Productos cargados</h1>
+      <div class="row" style="margin-bottom:14px;">
+        <input id="filterSearch" type="text" placeholder="Buscar por nombre..." style="flex:1;min-width:160px;">
+        <select id="filterCategory" style="flex:0 0 auto;width:auto;min-width:160px;">
+          <option value="">Todas las categorías</option>
+        </select>
+      </div>
       <table>
-        <thead><tr><th></th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Visible</th><th></th></tr></thead>
+        <thead><tr><th></th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Visible</th><th></th></tr></thead>
         <tbody id="productsTableBody"></tbody>
       </table>
     </div>
@@ -465,7 +475,9 @@
     const { data } = await sb.from("categorias").select("*").order("orden");
     CATEGORIES = data || [];
     document.getElementById("pCategory").innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.label}</option>`).join("");
+    document.getElementById("filterCategory").innerHTML = `<option value="">Todas las categorías</option>` + CATEGORIES.map(c => `<option value="${c.id}">${c.label}</option>`).join("");
     renderCategoriesList();
+    if(ALL_PRODUCTS.length) renderProductsTable();
   }
 
   function renderCategoriesList(){
@@ -696,21 +708,39 @@
   }
 
   /* ---------- PRODUCTOS ---------- */
+  let ALL_PRODUCTS = [];
+
   async function loadProducts(){
     const { data } = await sb.from("productos").select("*").order("created_at", { ascending:false });
+    ALL_PRODUCTS = data || [];
+    renderProductsTable();
+  }
+
+  function renderProductsTable(){
+    const search = document.getElementById("filterSearch").value.trim().toLowerCase();
+    const cat = document.getElementById("filterCategory").value;
+
+    const filtered = ALL_PRODUCTS.filter(p => {
+      const matchesSearch = !search || p.name.toLowerCase().includes(search);
+      const matchesCat = !cat || p.category === cat;
+      return matchesSearch && matchesCat;
+    });
+
     const tbody = document.getElementById("productsTableBody");
-    if(!data || !data.length){
-      tbody.innerHTML = `<tr><td colspan="6">Todavía no cargaste productos.</td></tr>`;
+    if(!filtered.length){
+      tbody.innerHTML = `<tr><td colspan="7">${ALL_PRODUCTS.length ? "Ningún producto coincide con el filtro." : "Todavía no cargaste productos."}</td></tr>`;
       return;
     }
-    tbody.innerHTML = data.map(p => {
+    tbody.innerHTML = filtered.map(p => {
       const thumb = (p.images && p.images.length) ? p.images[0] : p.image_url;
+      const stockLabel = p.stock === 0 ? '<span style="color:var(--danger);font-weight:700;">0</span>' : (p.stock ?? "—");
       return `
       <tr>
         <td>${thumb ? `<img src="${thumb}">` : `<span class="thumb-empty"></span>`}</td>
         <td>${p.name}${p.on_offer ? ' <span title="En oferta">🔥</span>' : ""}${p.is_new ? ' <span title="En Nuevos lanzamientos">✨</span>' : ""}</td>
         <td>${CATEGORIES.find(c=>c.id===p.category)?.label || p.category}</td>
         <td>$${Number(p.price).toLocaleString("es-AR", { maximumFractionDigits:2 })}</td>
+        <td>${stockLabel}</td>
         <td>${p.active ? "Sí" : "No"}</td>
         <td class="row">
           <button class="btn-outline btn-small" onclick="editProduct(${p.id})">Editar</button>
@@ -720,6 +750,9 @@
     `;
     }).join("");
   }
+
+  document.getElementById("filterSearch").addEventListener("input", renderProductsTable);
+  document.getElementById("filterCategory").addEventListener("change", renderProductsTable);
 
   function renderImagePreview(){
     const wrap = document.getElementById("pImagesPreview");
@@ -743,6 +776,7 @@
     document.getElementById("pName").value = p.name;
     document.getElementById("pCategory").value = p.category;
     document.getElementById("pPrice").value = Number(p.price).toLocaleString("es-AR", { maximumFractionDigits:2 });
+    document.getElementById("pStock").value = p.stock ?? "";
     document.getElementById("pBadge").value = p.badge || "";
     document.getElementById("pDescription").value = p.description || "";
     document.getElementById("pActive").checked = p.active;
@@ -768,6 +802,7 @@
     document.getElementById("formTitle").textContent = "Nuevo producto";
     document.getElementById("pName").value = "";
     document.getElementById("pPrice").value = "";
+    document.getElementById("pStock").value = "";
     document.getElementById("pBadge").value = "";
     document.getElementById("pDescription").value = "";
     document.getElementById("pActive").checked = true;
@@ -786,6 +821,8 @@
     const name = document.getElementById("pName").value.trim();
     const category = document.getElementById("pCategory").value;
     const price = parsePriceValue(document.getElementById("pPrice").value);
+    const stockRaw = document.getElementById("pStock").value;
+    const stock = stockRaw === "" ? 0 : parseInt(stockRaw, 10);
     const badge = document.getElementById("pBadge").value.trim() || null;
     const description = document.getElementById("pDescription").value.trim() || null;
     const active = document.getElementById("pActive").checked;
@@ -812,7 +849,7 @@
       }
 
       const payload = {
-        name, category, price, badge, active, description, on_offer, is_new,
+        name, category, price, badge, active, description, on_offer, is_new, stock,
         images: finalImages,
         image_url: finalImages[0] || null,
       };
